@@ -1,0 +1,21 @@
+{
+  "name": "hazelcast-rest-proxy",
+  "version": "1.0.0",
+  "description": "This is a REST proxy for Hazelcast. It is used to access Hazelcast via HTTP calls. Behind the scenes it is using the Hazelcast Node.js client.",
+  "main": "index.js",
+  "scripts": {
+    "prestart": "npm install",
+    "start": "node index.js"
+  },
+  "keywords": [
+    "swagger"
+  ],
+  "license": "Unlicense",
+  "private": true,
+  "dependencies": {
+    "connect": "^3.2.0",
+    "hazelcast-client": "^5.0.4",
+    "js-yaml": "^3.3.0",
+    "oas3-tools": "^2.2.3"
+  }
+}

@@ -1,0 +1,649 @@
+openapi: 3.0.0
+info:
+  title: Hazelcast REST Proxy
+  description: This is a REST proxy for Hazelcast. It is used to access Hazelcast
+    via HTTP calls. Behind the scenes it is using the Hazelcast Node.js client.
+  contact:
+    email: serkan.ozel@hazelcast.com
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  version: 1.0.0
+servers:
+- url: https://virtserver.swaggerhub.com/srknzl/hazelcastrestproxy/1.0.0
+  description: SwaggerHub API Auto Mocking
+- url: http://localhost:8080
+  description: Local server
+tags:
+- name: map
+  description: Methods about the map proxy
+  externalDocs:
+    description: Find out more
+    url: https://docs.hazelcast.com/hazelcast/latest/data-structures/map
+- name: sql
+  description: Methods about SQL
+  externalDocs:
+    description: Find out more
+    url: https://docs.hazelcast.com/hazelcast/latest/sql/sql-overview
+paths:
+  /map/get:
+    post:
+      tags:
+      - map
+      summary: Gets a value from a map
+      description: "Given a key, gets a value from a map."
+      operationId: mapGet
+      requestBody:
+        $ref: '#/components/requestBodies/mapNameKey'
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200'
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/serverError'
+        "500":
+          description: Internal Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/serverError'
+      x-swagger-router-controller: Map
+  /map/set:
+    post:
+      tags:
+      - map
+      summary: Set an entry in a map
+      description: Sets a key-value pair to a Hazelcast Map proxy.
+      operationId: mapSet
+      requestBody:
+        $ref: '#/components/requestBodies/mapSetRequest'
+      responses:
+        "200":
+          description: successful operation
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/serverError'
+        "500":
+          description: Internal Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/serverError'
+      x-swagger-router-controller: Map
+  /map/delete:
+    post:
+      tags:
+      - map
+      summary: Delete an entry from a map
+      description: Delete an entry from a map using a key
+      operationId: mapDelete
+      requestBody:
+        $ref: '#/components/requestBodies/mapNameKey'
+      responses:
+        "200":
+          description: successful operation
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/serverError'
+        "500":
+          description: Internal Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/serverError'
+      x-swagger-router-controller: Map
+  /sql/execute:
+    post:
+      tags:
+      - sql
+      summary: Executes an SQL statement
+      description: "Given an SQL statement, its parameters and options, execute the\
+        \ SQL statement. All rows will be accumulated and returned in an sqlResult.\
+        \ The returned sqlResult will include the first page of SQL rows. In order\
+        \ to fetch other page or close the SQL statement, you can use the sqlQueryId\
+        \ that will be returned as a response."
+      operationId: sqlExecute
+      requestBody:
+        $ref: '#/components/requestBodies/sqlExecuteRequest'
+      responses:
+        "200":
+          description: Successful execute operation that returns an SqlResult.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_1'
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/serverError'
+        "500":
+          description: Internal Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/serverError'
+      x-swagger-router-controller: Sql
+  /sql/fetchRows:
+    post:
+      tags:
+      - sql
+      summary: Fetches some more rows of an SQL result.
+      description: "Given an SQL query id, this API will return you more rows of the\
+        \ SQL result if it is not exhausted already."
+      operationId: sqlFetchRows
+      requestBody:
+        description: SQL query id and number of rows you want to read.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/sql_fetchRows_body'
+        required: true
+      responses:
+        "200":
+          description: Successful fetch operation that returns more rows.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_2'
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/serverError'
+        "404":
+          description: SQL query id not found
+        "500":
+          description: Internal Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/serverError'
+      x-swagger-router-controller: Sql
+  /sql/close:
+    post:
+      tags:
+      - sql
+      summary: Closes an SQL result.
+      description: "Given an SQL query id, this API will close an SQL result which\
+        \ releases its resources and becomes unusable afterwards."
+      operationId: sqlClose
+      requestBody:
+        description: SQL query id of the SQL result to be closed.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/sql_close_body'
+        required: true
+      responses:
+        "200":
+          description: Successful close operation.
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/serverError'
+        "404":
+          description: SQL query id not found
+        "500":
+          description: Internal Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/serverError'
+      x-swagger-router-controller: Sql
+  /sql/columnTypes:
+    get:
+      tags:
+      - sql
+      summary: Returns the column types.
+      description: Returns the column type strings.
+      operationId: sqlColumnTypes
+      responses:
+        "200":
+          description: Successfull operation.
+          content:
+            application/json:
+              schema:
+                type: array
+                example:
+                - VARCHAR
+                - BOOLEAN
+                - TINYINT
+                - SMALLINT
+                - INTEGER
+                - BIGINT
+                - DECIMAL
+                - REAL
+                - DOUBLE
+                - DATE
+                - TIME
+                - TIMESTAMP
+                - TIMESTAMP_WITH_TIME_ZONE
+                - OBJECT
+                - "NULL"
+                - JSON
+                items:
+                  type: string
+                x-content-type: application/json
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/serverError'
+        "500":
+          description: Internal Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/serverError'
+      x-swagger-router-controller: Sql
+components:
+  schemas:
+    long:
+      type: object
+      properties:
+        low:
+          type: number
+        high:
+          type: number
+      description: Represents a 64 bit signed integer with two 32 bit integers
+      example:
+        high: 6.02745618307040320615897144307382404804229736328125
+        low: 0.80082819046101150206595775671303272247314453125
+    sqlQueryId:
+      type: object
+      properties:
+        memberIdHigh:
+          $ref: '#/components/schemas/long'
+        memberIdLow:
+          $ref: '#/components/schemas/long'
+        localIdHigh:
+          $ref: '#/components/schemas/long'
+        localIdLow:
+          $ref: '#/components/schemas/long'
+      description: Identified for an SQL query. Used to fetch more pages or close
+        the SQL statement.
+      example:
+        memberIdHigh:
+          high: 6.02745618307040320615897144307382404804229736328125
+          low: 0.80082819046101150206595775671303272247314453125
+        localIdLow: null
+        localIdHigh: null
+        memberIdLow: null
+    sqlExecuteResponse:
+      type: object
+      properties:
+        sqlQueryId:
+          $ref: '#/components/schemas/sqlQueryId'
+        rows:
+          allOf:
+          - $ref: '#/components/schemas/sqlRows'
+          - nullable: true
+          - description: SQL rows if rows exist in the result; otherwise null.
+        rowMetadata:
+          allOf:
+          - $ref: '#/components/schemas/sqlRowMetadata'
+          - description: SQL row metadata if rows exist in the result; otherwise null.
+          - nullable: true
+        isRowSet:
+          type: boolean
+          description: "Whether this result has rows to iterate. False if update count\
+            \ is returned, true if rows are returned."
+          example: true
+        updateCount:
+          allOf:
+          - $ref: '#/components/schemas/long'
+          - description: The number of rows updated by the statement or `-1` if this
+              result is a row set.
+      description: The result of a successful SQL execution.
+      example:
+        sqlQueryId:
+          memberIdHigh:
+            high: 6.02745618307040320615897144307382404804229736328125
+            low: 0.80082819046101150206595775671303272247314453125
+          localIdLow: null
+          localIdHigh: null
+          memberIdLow: null
+        updateCount: ""
+        isRowSet: true
+        rows: ""
+        rowMetadata: ""
+    sqlFetchRowsRequest:
+      type: object
+      properties:
+        sqlQueryId:
+          $ref: '#/components/schemas/sqlQueryId'
+        numberOfRowsToRead:
+          type: number
+          description: Maximum number of rows you want to read in this call.
+          example: 100
+      description: SQL query id and the number of rows to read.
+    sqlFetchRowsResponse:
+      type: object
+      properties:
+        rows:
+          $ref: '#/components/schemas/sqlRows'
+        eof:
+          type: boolean
+          description: "Whether the result has reached its end of rows or not. If\
+            \ true, the result won't be able to be read anymore."
+          example: false
+        readRowCount:
+          type: number
+          description: The number of rows read in this read rows operation.
+          example: 1
+      description: "The result of reading more rows of an SQL result. If the SQL result\
+        \ is already exhausted, rows will be empty, eof will be true and readRowCount\
+        \ will be 0."
+      example:
+        readRowCount: 1
+        rows:
+        - id: 1
+          age: 23
+          job:
+            name: Doctor
+            startDate: 2021-02-26T19:26:01.641Z
+        - id: 1
+          age: 23
+          job:
+            name: Doctor
+            startDate: 2021-02-26T19:26:01.641Z
+        eof: false
+    sqlCloseRequest:
+      type: object
+      properties:
+        sqlQueryId:
+          $ref: '#/components/schemas/sqlQueryId'
+      description: SQL query id of SQL result to be closed.
+    sqlRowMetadata:
+      type: object
+      properties:
+        columnCount:
+          type: number
+          description: The number of columns in the row.
+        columns:
+          type: array
+          items:
+            $ref: '#/components/schemas/sqlColumnMetadata'
+      description: Holds metadata about an SQL row.
+    sqlColumnMetadata:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Column name
+        type:
+          type: string
+          description: Column type. One of the strings that returned by /sql/columnTypes
+            API.
+        nullable:
+          type: boolean
+          description: "Column nullability. If true, the column values can be null"
+      description: Holds metadata about an SQL column.
+    sqlRow:
+      type: object
+      description: An object where keys are column names and values are row values.
+      example:
+        id: 1
+        age: 23
+        job:
+          name: Doctor
+          startDate: 2021-02-26T19:26:01.641Z
+    sqlRows:
+      type: array
+      description: "Sql rows, can be empty."
+      items:
+        $ref: '#/components/schemas/sqlRow'
+    serverError:
+      type: object
+      properties:
+        message:
+          type: string
+          example: An error occurred because ...
+        stack:
+          type: string
+          example: SerializationError at ...
+        cause:
+          type: string
+          nullable: true
+          example: Caused by ...
+        serverStackTrace:
+          type: array
+          description: Hazelcast server stack trace element
+          nullable: true
+          items:
+            $ref: '#/components/schemas/serverError_serverStackTrace'
+      description: An error happened in server side
+      nullable: true
+    entryKey:
+      description: The key of the entry to be added.
+      example: myKey
+    entryValue:
+      description: The value of the entry to be added.
+      example: 123.456
+    mapNameKey:
+      required:
+      - key
+      - mapName
+      type: object
+      properties:
+        key:
+          $ref: '#/components/schemas/entryKey'
+        mapName:
+          type: string
+          example: myMap
+    mapSetRequest:
+      required:
+      - key
+      - mapName
+      - value
+      type: object
+      properties:
+        key:
+          $ref: '#/components/schemas/entryKey'
+        mapName:
+          type: string
+          example: myMap
+        value:
+          $ref: '#/components/schemas/entryValue'
+        ttl:
+          type: number
+          example: 3600
+        maxIdle:
+          type: number
+          example: 1800
+    sqlParams:
+      type: array
+      example:
+      - 20
+      - 30
+      items:
+        description: A parameter for an SQL statement
+        example: 12
+    sqlOptions:
+      type: object
+      properties:
+        schema:
+          type: string
+          description: "The schema name. The engine will try to resolve the non-qualified\
+            \ object identifiers from the statement in the      given schema. If not\
+            \ found, the default search path will be used, which looks for objects\
+            \ in the predefined schemas `partitioned` and `public`. The schema name\
+            \ is case sensitive. For example, `foo` and `Foo` are different schemas.The\
+            \ default value is `null` meaning only the default search path is used."
+          nullable: true
+          example: public
+        timeoutMillis:
+          type: number
+          description: "The execution timeout in milliseconds. Note that this timeout\
+            \ is the timeout that is between Node.js client and the Hazelcast, not\
+            \ between this REST API and the REST API's client. If the timeout is reached\
+            \ for a running statement, it will be cancelled forcefully. Zero value\
+            \ means no timeout. `-1` means that the timeout in server config will\
+            \ be used. Other negative values are prohibited. Defaults to `-1`."
+          nullable: true
+          example: 1000
+        cursorBufferSize:
+          type: number
+          description: "The cursor buffer size (measured in the number of rows). Note\
+            \ this page size is about Node.js client and the Hazelcast, not about\
+            \ this REST API and the REST API's client. When a statement is submitted\
+            \ for execution, a SqlResult is returned as a result. When rows are ready\
+            \ to be consumed, they are put into an internal buffer of the cursor.\
+            \ This parameter defines the maximum number of rows in that buffer. When\
+            \ the threshold is reached, the backpressure mechanism will slow down\
+            \ the execution, possibly to a complete halt, to prevent out-of-memory.\
+            \ Only positive values are allowed. The default value is expected to work\
+            \ well for most workloads. A bigger buffer size may give you a slight\
+            \ performance boost for queries with large result sets at the cost of\
+            \ increased memory consumption. Defaults to `4096`."
+          nullable: true
+          example: 8192
+        expectedResultType:
+          type: string
+          description: "Expected result type of SQL query. By default, set to `ANY`.\
+            \ Available values are `ANY`, `ROWS`, and `UPDATE_COUNT`. If the expected\
+            \ result type is not satisfied Hazelcast will return an error to the Node.js\
+            \ client and that error will be returned to you."
+          nullable: true
+          example: ANY
+      description: SQL options for an SQL statement
+    sqlExecuteRequest:
+      required:
+      - sql
+      type: object
+      properties:
+        sql:
+          type: string
+          example: SELECT * FROM myMap WHERE age > ? && age < ?
+        params:
+          $ref: '#/components/schemas/sqlParams'
+        options:
+          $ref: '#/components/schemas/sqlOptions'
+    inline_response_200:
+      type: object
+      properties:
+        value:
+          $ref: '#/components/schemas/entryValue'
+      example:
+        value: 123.456
+    inline_response_200_1:
+      type: object
+      properties:
+        value:
+          $ref: '#/components/schemas/sqlExecuteResponse'
+      example:
+        value:
+          sqlQueryId:
+            memberIdHigh:
+              high: 6.02745618307040320615897144307382404804229736328125
+              low: 0.80082819046101150206595775671303272247314453125
+            localIdLow: null
+            localIdHigh: null
+            memberIdLow: null
+          updateCount: ""
+          isRowSet: true
+          rows: ""
+          rowMetadata: ""
+    sql_fetchRows_body:
+      type: object
+      properties:
+        value:
+          $ref: '#/components/schemas/sqlFetchRowsRequest'
+    inline_response_200_2:
+      type: object
+      properties:
+        value:
+          $ref: '#/components/schemas/sqlFetchRowsResponse'
+      example:
+        value:
+          readRowCount: 1
+          rows:
+          - id: 1
+            age: 23
+            job:
+              name: Doctor
+              startDate: 2021-02-26T19:26:01.641Z
+          - id: 1
+            age: 23
+            job:
+              name: Doctor
+              startDate: 2021-02-26T19:26:01.641Z
+          eof: false
+    sql_close_body:
+      type: object
+      properties:
+        value:
+          $ref: '#/components/schemas/sqlCloseRequest'
+    serverError_serverStackTrace:
+      type: object
+      properties:
+        className:
+          type: string
+          example: AClass
+        methodName:
+          type: string
+          example: add
+        fileName:
+          type: string
+          example: InvocationService.java
+        lineNumber:
+          type: number
+          example: 1231
+      example: null
+  responses:
+    "400":
+      description: Invalid input
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/serverError'
+    "500":
+      description: Internal Error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/serverError'
+  requestBodies:
+    sqlExecuteRequest:
+      description: "SQL string, parameters and statement options"
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              value:
+                $ref: '#/components/schemas/sqlExecuteRequest'
+      required: true
+    mapNameKey:
+      description: A map name and a key
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/mapNameKey'
+      required: true
+    mapSetRequest:
+      description: Map set request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/mapSetRequest'
+      required: true
