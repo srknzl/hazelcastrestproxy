@@ -14,7 +14,14 @@ const ongoingQueries = new Map();
  **/
 exports.sqlClose = function(body) {
   return new Promise(function(resolve, reject) {
-    resolve();
+    const queryId = body.sqlQueryId;
+    const sqlResult = ongoingQueries.get(queryId);
+    sqlResult.close().then(() => {
+      ongoingQueries.delete(queryId);
+      resolve();
+    }).catch(err => {
+      reject(ErrorUtil.errorToJson(err));
+    });
   });
 }
 
@@ -76,34 +83,36 @@ exports.sqlExecute = function(body) {
  * returns inline_response_200_2
  **/
 exports.sqlFetchRows = function(body) {
-  return new Promise(function(resolve, reject) {
-    var examples = {};
-    examples['application/json'] = {
-  "value" : {
-    "readRowCount" : 1,
-    "rows" : [ {
-      "id" : 1,
-      "age" : 23,
-      "job" : {
-        "name" : "Doctor",
-        "startDate" : "2021-02-26T19:26:01.641Z"
+  return new Promise(async function(resolve, reject) {
+    const queryId = body.sqlQueryId;
+    const numberOfRowsToRead = body.numberOfRowsToRead;
+    const sqlResult = ongoingQueries.get(queryId);
+    let readRowCount = 0;
+    const rows = [];
+    try {
+      for await (const row of sqlResult) {
+        rows.push(row);
+        readRowCount++;
+        if (readRowCount === numberOfRowsToRead) {
+          break;
+        }
       }
-    }, {
-      "id" : 1,
-      "age" : 23,
-      "job" : {
-        "name" : "Doctor",
-        "startDate" : "2021-02-26T19:26:01.641Z"
-      }
-    } ],
-    "eof" : false
-  }
-};
-    if (Object.keys(examples).length > 0) {
-      resolve(examples[Object.keys(examples)[0]]);
-    } else {
-      resolve();
+    } catch (err) {
+      reject(ErrorUtil.errorToJson(err));
     }
+    let eof = false;
+    if (readRowCount < numberOfRowsToRead) {
+      eof = true;
+    }
+    // Query is closed because rows are ended.
+    if (eof) {
+      ongoingQueries.delete(queryId);
+    }
+    resolve({
+      rows,
+      eof,
+      readRowCount
+    });
   });
 }
 
