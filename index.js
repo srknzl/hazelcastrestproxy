@@ -19,7 +19,8 @@ var app = expressAppConfig.getApp();
 
 app.use(OpenAPIValidator.middleware({
     apiSpec: './api/openapi.yaml',
-    validateRequests: true
+    validateRequests: true,
+    validateResponses: true
 }));
 
 app.use((err, req, res, next) => {

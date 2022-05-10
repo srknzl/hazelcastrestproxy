@@ -13,16 +13,6 @@ module.exports.sqlClose = function sqlClose (req, res, next, body) {
     });
 };
 
-module.exports.sqlColumnTypes = function sqlColumnTypes (req, res, next) {
-  Sql.sqlColumnTypes()
-    .then(function (response) {
-      utils.writeJson(res, response);
-    })
-    .catch(function (error) {
-      utils.writeJson(res, utils.respondWithCode(error.code, error.payload));
-    });
-};
-
 module.exports.sqlExecute = function sqlExecute (req, res, next, body) {
   Sql.sqlExecute(body)
     .then(function (response) {

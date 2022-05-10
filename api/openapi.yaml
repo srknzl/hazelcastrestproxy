@@ -207,53 +207,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/serverError'
       x-swagger-router-controller: Sql
-  /sql/columnTypes:
-    get:
-      tags:
-      - sql
-      summary: Returns the column types.
-      description: Returns the column type strings.
-      operationId: sqlColumnTypes
-      responses:
-        "200":
-          description: Successfull operation.
-          content:
-            application/json:
-              schema:
-                type: array
-                example:
-                - VARCHAR
-                - BOOLEAN
-                - TINYINT
-                - SMALLINT
-                - INTEGER
-                - BIGINT
-                - DECIMAL
-                - REAL
-                - DOUBLE
-                - DATE
-                - TIME
-                - TIMESTAMP
-                - TIMESTAMP_WITH_TIME_ZONE
-                - OBJECT
-                - "NULL"
-                - JSON
-                items:
-                  type: string
-                x-content-type: application/json
-        "400":
-          description: Invalid input
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/badInput'
-        "500":
-          description: Internal Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/serverError'
-      x-swagger-router-controller: Sql
 components:
   schemas:
     long:
@@ -263,6 +216,8 @@ components:
           type: number
         high:
           type: number
+        unsigned:
+          type: boolean
       description: Represents a 64 bit signed integer with two 32 bit integers
     sqlQueryId:
       type: string
@@ -273,6 +228,11 @@ components:
       properties:
         sqlQueryId:
           $ref: '#/components/schemas/sqlQueryId'
+        rows:
+          allOf:
+          - $ref: '#/components/schemas/sqlRows'
+          - description: Rows in the first page or null if there are no rows.
+          - nullable: true
         rowMetadata:
           allOf:
           - $ref: '#/components/schemas/sqlRowMetadata'
@@ -293,6 +253,7 @@ components:
         sqlQueryId: sqlQueryId
         updateCount: ""
         isRowSet: true
+        rows: ""
         rowMetadata: ""
     sqlFetchRowsRequest:
       type: object

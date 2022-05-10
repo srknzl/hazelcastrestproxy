@@ -35,26 +35,6 @@ exports.sqlClose = function(body) {
   });
 }
 
-
-/**
- * Returns the column types.
- * Returns the column type strings.
- *
- * returns List
- **/
-exports.sqlColumnTypes = function() {
-  return new Promise(function(resolve, reject) {
-    var examples = {};
-    examples['application/json'] = [ "VARCHAR", "BOOLEAN", "TINYINT", "SMALLINT", "INTEGER", "BIGINT", "DECIMAL", "REAL", "DOUBLE", "DATE", "TIME", "TIMESTAMP", "TIMESTAMP_WITH_TIME_ZONE", "OBJECT", "NULL", "JSON" ];
-    if (Object.keys(examples).length > 0) {
-      resolve(examples[Object.keys(examples)[0]]);
-    } else {
-      resolve();
-    }
-  });
-}
-
-
 /**
  * Executes an SQL statement
  * Given an SQL statement, its parameters and options, execute the SQL statement. All rows will be accumulated and returned in an sqlResult. The returned sqlResult will include the first page of SQL rows. In order to fetch other page or close the SQL statement, you can use the sqlQueryId that will be returned as a response.
@@ -63,27 +43,31 @@ exports.sqlColumnTypes = function() {
  * returns inline_response_200_1
  **/
 exports.sqlExecute = function(body) {
-  return new Promise(async function(resolve, reject) {  
+  return new Promise(function(resolve, reject) {  
     ClientUtil.getClient().then(client => {
-      client.getSql().execute(body.sql, body.params ? body.params : undefined, body.options ? body.options : undefined).then(sqlResult => {
+      client.getSql().execute(body.sql, body.params ? body.params : undefined, body.options ? body.options : undefined).then(async sqlResult => {
         const queryId = QueryIdUtil.queryIdToString(sqlResult.queryId);
         ongoingQueries.set(queryId, sqlResult);
         const isRowSet = sqlResult.isRowSet();
 
         const pageSize = sqlResult.cursorBufferSize;
-        const rows = [];
-        let counter = 0;
-        for await (const row of sqlResult) {
-          rows.push(row);
-          counter++;
-          if (counter === pageSize) {
-            break;
+        let rows = null;
+        if(isRowSet) {
+          rows = [];
+          let counter = 0;
+        
+          for await (const row of sqlResult) {
+            rows.push(row);
+            counter++;
+            if (counter === pageSize) {
+              break;
+            }
           }
         }
-
+        
         resolve({
           sqlQueryId: queryId,
-          rowMetadata: sqlResult.rowMetadata,
+          rowMetadata: {columns: sqlResult.rowMetadata.columns},
           updateCount: sqlResult.updateCount,
           rows,
           isRowSet,
