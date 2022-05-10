@@ -2,6 +2,7 @@
 
 const ClientUtil = require('../utils/client');
 const ErrorUtil = require('../utils/error');
+const QueryIdUtil = require('../utils/queryId');
 
 const ongoingQueries = new Map();
 
@@ -16,6 +17,15 @@ exports.sqlClose = function(body) {
   return new Promise(function(resolve, reject) {
     const queryId = body.sqlQueryId;
     const sqlResult = ongoingQueries.get(queryId);
+    if(sqlResult === undefined) {
+      reject({
+        code: 404,
+        payload: {
+          message: `SQL result with query id ${queryId} is not found`,
+        }
+      });
+      return;
+    }
     sqlResult.close().then(() => {
       ongoingQueries.delete(queryId);
       resolve();
@@ -53,14 +63,14 @@ exports.sqlColumnTypes = function() {
  * returns inline_response_200_1
  **/
 exports.sqlExecute = function(body) {
-  return new Promise(function(resolve, reject) {  
+  return new Promise(async function(resolve, reject) {  
     ClientUtil.getClient().then(client => {
       client.getSql().execute(body.sql, body.params ? body.params : undefined, body.options ? body.options : undefined).then(sqlResult => {
-        ongoingQueries.set(sqlResult.queryId, sqlResult);
+        const queryId = QueryIdUtil.queryIdToString(sqlResult.queryId);
+        ongoingQueries.set(queryId, sqlResult);
         const isRowSet = sqlResult.isRowSet();
         resolve({
-          sqlQueryId: sqlResult.queryId,
-          rows: isRowSet ? [...sqlResult] : null,
+          sqlQueryId: queryId,
           rowMetadata: sqlResult.rowMetadata,
           updateCount: sqlResult.updateCount,
           isRowSet,
@@ -87,6 +97,15 @@ exports.sqlFetchRows = function(body) {
     const queryId = body.sqlQueryId;
     const numberOfRowsToRead = body.numberOfRowsToRead;
     const sqlResult = ongoingQueries.get(queryId);
+    if (sqlResult === undefined) {
+      reject({
+        code: 404,
+        payload: {
+          message: `SQL result with query id ${queryId} is not found`,
+        }
+      });
+      return;
+    }
     let readRowCount = 0;
     const rows = [];
     try {

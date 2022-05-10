@@ -41,13 +41,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200'
+                $ref: '#/components/schemas/entryValue'
         "400":
           description: Invalid input
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/serverError'
+                $ref: '#/components/schemas/badInput'
         "500":
           description: Internal Error
           content:
@@ -72,7 +72,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/serverError'
+                $ref: '#/components/schemas/badInput'
         "500":
           description: Internal Error
           content:
@@ -97,7 +97,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/serverError'
+                $ref: '#/components/schemas/badInput'
         "500":
           description: Internal Error
           content:
@@ -111,26 +111,25 @@ paths:
       - sql
       summary: Executes an SQL statement
       description: "Given an SQL statement, its parameters and options, execute the\
-        \ SQL statement. All rows will be accumulated and returned in an sqlResult.\
-        \ The returned sqlResult will include the first page of SQL rows. In order\
-        \ to fetch other page or close the SQL statement, you can use the sqlQueryId\
-        \ that will be returned as a response."
+        \ SQL statement. A SQL query id which represents an SQL result will be returned.\
+        \ You can use the query id to read rows or close the result."
       operationId: sqlExecute
       requestBody:
         $ref: '#/components/requestBodies/sqlExecuteRequest'
       responses:
         "200":
-          description: Successful execute operation that returns an SqlResult.
+          description: Successful execute operation that returns a SQL query id representing
+            an SqlResult.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_1'
+                $ref: '#/components/schemas/sqlExecuteResponse'
         "400":
           description: Invalid input
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/serverError'
+                $ref: '#/components/schemas/badInput'
         "500":
           description: Internal Error
           content:
@@ -151,7 +150,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/sql_fetchRows_body'
+              $ref: '#/components/schemas/sqlFetchRowsRequest'
         required: true
       responses:
         "200":
@@ -159,13 +158,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_2'
+                $ref: '#/components/schemas/sqlFetchRowsResponse'
         "400":
           description: Invalid input
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/serverError'
+                $ref: '#/components/schemas/badInput'
         "404":
           description: SQL query id not found
         "500":
@@ -188,7 +187,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/sql_close_body'
+              $ref: '#/components/schemas/sqlCloseRequest'
         required: true
       responses:
         "200":
@@ -198,7 +197,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/serverError'
+                $ref: '#/components/schemas/badInput'
         "404":
           description: SQL query id not found
         "500":
@@ -247,7 +246,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/serverError'
+                $ref: '#/components/schemas/badInput'
         "500":
           description: Internal Error
           content:
@@ -265,39 +264,15 @@ components:
         high:
           type: number
       description: Represents a 64 bit signed integer with two 32 bit integers
-      example:
-        high: 6.02745618307040320615897144307382404804229736328125
-        low: 0.80082819046101150206595775671303272247314453125
     sqlQueryId:
-      type: object
-      properties:
-        memberIdHigh:
-          $ref: '#/components/schemas/long'
-        memberIdLow:
-          $ref: '#/components/schemas/long'
-        localIdHigh:
-          $ref: '#/components/schemas/long'
-        localIdLow:
-          $ref: '#/components/schemas/long'
-      description: Identified for an SQL query. Used to fetch more pages or close
+      type: string
+      description: Identifier for an SQL query. Used to fetch more pages or close
         the SQL statement.
-      example:
-        memberIdHigh:
-          high: 6.02745618307040320615897144307382404804229736328125
-          low: 0.80082819046101150206595775671303272247314453125
-        localIdLow: null
-        localIdHigh: null
-        memberIdLow: null
     sqlExecuteResponse:
       type: object
       properties:
         sqlQueryId:
           $ref: '#/components/schemas/sqlQueryId'
-        rows:
-          allOf:
-          - $ref: '#/components/schemas/sqlRows'
-          - nullable: true
-          - description: SQL rows if rows exist in the result; otherwise null.
         rowMetadata:
           allOf:
           - $ref: '#/components/schemas/sqlRowMetadata'
@@ -315,16 +290,9 @@ components:
               result is a row set.
       description: The result of a successful SQL execution.
       example:
-        sqlQueryId:
-          memberIdHigh:
-            high: 6.02745618307040320615897144307382404804229736328125
-            low: 0.80082819046101150206595775671303272247314453125
-          localIdLow: null
-          localIdHigh: null
-          memberIdLow: null
+        sqlQueryId: sqlQueryId
         updateCount: ""
         isRowSet: true
-        rows: ""
         rowMetadata: ""
     sqlFetchRowsRequest:
       type: object
@@ -412,6 +380,18 @@ components:
       description: "Sql rows, can be empty."
       items:
         $ref: '#/components/schemas/sqlRow'
+    badInput:
+      type: object
+      properties:
+        message:
+          type: string
+          example: request.body.sql should be string
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/badInput_errors'
+      description: Invalid input
+      nullable: false
     serverError:
       type: object
       properties:
@@ -538,61 +518,19 @@ components:
           $ref: '#/components/schemas/sqlParams'
         options:
           $ref: '#/components/schemas/sqlOptions'
-    inline_response_200:
+    badInput_errors:
       type: object
       properties:
-        value:
-          $ref: '#/components/schemas/entryValue'
-      example:
-        value: 123.456
-    inline_response_200_1:
-      type: object
-      properties:
-        value:
-          $ref: '#/components/schemas/sqlExecuteResponse'
-      example:
-        value:
-          sqlQueryId:
-            memberIdHigh:
-              high: 6.02745618307040320615897144307382404804229736328125
-              low: 0.80082819046101150206595775671303272247314453125
-            localIdLow: null
-            localIdHigh: null
-            memberIdLow: null
-          updateCount: ""
-          isRowSet: true
-          rows: ""
-          rowMetadata: ""
-    sql_fetchRows_body:
-      type: object
-      properties:
-        value:
-          $ref: '#/components/schemas/sqlFetchRowsRequest'
-    inline_response_200_2:
-      type: object
-      properties:
-        value:
-          $ref: '#/components/schemas/sqlFetchRowsResponse'
-      example:
-        value:
-          readRowCount: 1
-          rows:
-          - id: 1
-            age: 23
-            job:
-              name: Doctor
-              startDate: 2021-02-26T19:26:01.641Z
-          - id: 1
-            age: 23
-            job:
-              name: Doctor
-              startDate: 2021-02-26T19:26:01.641Z
-          eof: false
-    sql_close_body:
-      type: object
-      properties:
-        value:
-          $ref: '#/components/schemas/sqlCloseRequest'
+        path:
+          type: string
+          example: .body.sql
+        message:
+          type: string
+          example: should be string
+        errorCode:
+          type: string
+          example: type.openapi.validation
+      example: null
     serverError_serverStackTrace:
       type: object
       properties:
@@ -615,7 +553,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/serverError'
+            $ref: '#/components/schemas/badInput'
     "500":
       description: Internal Error
       content:
@@ -628,10 +566,7 @@ components:
       content:
         application/json:
           schema:
-            type: object
-            properties:
-              value:
-                $ref: '#/components/schemas/sqlExecuteRequest'
+            $ref: '#/components/schemas/sqlExecuteRequest'
       required: true
     mapNameKey:
       description: A map name and a key
