@@ -69,10 +69,23 @@ exports.sqlExecute = function(body) {
         const queryId = QueryIdUtil.queryIdToString(sqlResult.queryId);
         ongoingQueries.set(queryId, sqlResult);
         const isRowSet = sqlResult.isRowSet();
+
+        const pageSize = sqlResult.cursorBufferSize;
+        const rows = [];
+        let counter = 0;
+        for await (const row of sqlResult) {
+          rows.push(row);
+          counter++;
+          if (counter === pageSize) {
+            break;
+          }
+        }
+
         resolve({
           sqlQueryId: queryId,
           rowMetadata: sqlResult.rowMetadata,
           updateCount: sqlResult.updateCount,
+          rows,
           isRowSet,
         });
       }).catch(err => {
