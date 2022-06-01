@@ -321,8 +321,7 @@ components:
           description: Column name
         type:
           type: string
-          description: Column type. One of the strings that returned by /sql/columnTypes
-            API.
+          description: Column type.
         nullable:
           type: boolean
           description: "Column nullability. If true, the column values can be null"

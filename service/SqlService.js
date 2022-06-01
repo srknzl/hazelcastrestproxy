@@ -1,5 +1,6 @@
 'use strict';
 
+const { SqlColumnType } = require('hazelcast-client');
 const ClientUtil = require('../utils/client');
 const ErrorUtil = require('../utils/error');
 const QueryIdUtil = require('../utils/queryId');
@@ -65,9 +66,23 @@ exports.sqlExecute = function(body) {
           }
         }
         
+        let rowMetadata;
+        if (sqlResult.rowMetadata === null) {
+            rowMetadata = null;    
+        } else {
+            const columns = sqlResult.rowMetadata.columns.map(column => {
+                return {
+                    nullable: column.nullable,
+                    name: column.name,
+                    type: SqlColumnType[column.type]
+                }
+            });
+            rowMetadata = {columns};
+        }
+
         resolve({
           sqlQueryId: queryId,
-          rowMetadata: {columns: sqlResult.rowMetadata.columns},
+          rowMetadata: rowMetadata,
           updateCount: sqlResult.updateCount,
           rows,
           isRowSet,
